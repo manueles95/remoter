@@ -20,10 +20,9 @@ USER appuser
 
 # Copy only what's needed
 COPY --chown=appuser:appuser R/ /home/appuser/R/
-COPY --chown=appuser:appuser .env /home/appuser/.env
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Start the API
-CMD ["R", "-e", "library(plumber); library(dotenv); library(logger); library(jsonlite); load_dot_env(); pr <- plumb('R/plumber.R'); pr$run(host='0.0.0.0', port=8000)"] 
+CMD ["R", "-e", "library(plumber); library(dotenv); library(logger); library(jsonlite); pr <- plumb('R/plumber.R'); pr$run(host='0.0.0.0', port=8000)"] 
