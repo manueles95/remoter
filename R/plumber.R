@@ -3,12 +3,18 @@ library(plumber)
 library(dotenv)
 library(logger)
 
-# Load .env in local; in production, DO App vars override
-tryCatch({
-  load_dot_env()
-}, error = function(e) {
-  # Try loading from home directory if not found in current directory
-  load_dot_env(file = "~/.env")
+# Try to load .env if it exists, but continue silently if it doesn't
+suppressWarnings({
+  tryCatch({
+    if (file.exists(".env")) {
+      load_dot_env(file = ".env")
+      message("Loaded .env file")
+    } else {
+      message("No .env file found, using environment variables")
+    }
+  }, error = function(e) {
+    message("Could not load .env file, using environment variables")
+  })
 })
 
 #* @apiTitle R Plumber API
