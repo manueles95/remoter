@@ -36,18 +36,14 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/ || exit 1
 
-# Start the API with better error handling
-CMD ["R", "-e", "tryCatch({ \
-    library(plumber); \
-    library(dotenv); \
-    library(logger); \
-    library(jsonlite); \
-    logger::log_threshold(logger::INFO); \
-    message('Starting plumber API...'); \
-    pr <- plumb('/app/R/plumber.R'); \
-    message('Plumber loaded successfully, starting server...'); \
-    pr$run(host='0.0.0.0', port=8000) \
-}, error = function(e) { \
-    message(sprintf('Error starting server: %s', e$message)); \
-    quit(status=1) \
-})"] 
+# Create a startup script
+RUN echo '#!/usr/bin/env Rscript \n\
+library(plumber) \n\
+message("Starting plumber API...") \n\
+api <- plumb("/app/R/plumber.R") \n\
+message("Plumber loaded successfully, starting server...") \n\
+api$run(host="0.0.0.0", port=8000)' > /app/start.R && \
+    chmod +x /app/start.R
+
+# Start the API
+CMD ["Rscript", "/app/start.R"] 
