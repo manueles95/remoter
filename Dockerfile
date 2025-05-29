@@ -1,49 +1,39 @@
-FROM rocker/r-ver:4.3.0
+FROM rocker/geospatial:4.5
 
-# Install system dependencies and R packages as root
-USER root
-RUN apt-get update && apt-get install -y \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libsodium-dev \
-    zlib1g-dev \
-    pkg-config \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && R -e "install.packages(c('plumber','dotenv','logger','jsonlite'), repos='https://cloud.r-project.org')"
+# Instala paquetes necesarios adicionales
+RUN install2.r --error \
+    plumber \
+    jsonlite \
+    dotenv \
+    logger \
+    dplyr \
+    xgboost \
+    PCAmixdata
 
-# Create non-root user with specific UID/GID
-RUN groupadd -g 1000 appgroup && \
-    useradd -u 1000 -g appgroup -s /bin/bash -m appuser
+# Usa el usuario preexistente de la imagen
+USER rstudio
 
-# Set working directory
+# Directorio de trabajo
 WORKDIR /app
 
-# Copy application files
-COPY --chown=appuser:appgroup R/ /app/R/
+# Copia los scripts y datos con permisos correctos
+COPY --chown=rstudio:rstudio R/ /app/R/
+# COPY --chown=rstudio:rstudio data/ /app/data/
 
-# Set permissions
-RUN chown -R appuser:appgroup /app && \
+# Copia el script de inicio (preparado localmente como archivo)
+COPY --chown=rstudio:rstudio start.R /app/start.R
+
+# Asegura permisos
+RUN chmod +x /app/start.R && \
+    chown -R rstudio:rstudio /app && \
     chmod -R 755 /app
 
-# Switch to non-root user
-USER appuser
-
-# Expose the port the app runs on
+# Puerto expuesto por la API
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/ || exit 1
+  CMD curl -f http://localhost:8000/ || exit 1
 
-# Create a startup script
-RUN echo '#!/usr/bin/env Rscript \n\
-library(plumber) \n\
-message("Starting plumber API...") \n\
-api <- plumb("/app/R/plumber.R") \n\
-message("Plumber loaded successfully, starting server...") \n\
-api$run(host="0.0.0.0", port=8000)' > /app/start.R && \
-    chmod +x /app/start.R
-
-# Start the API
-CMD ["Rscript", "/app/start.R"] 
+# Ejecuta el script al iniciar el contenedor
+CMD ["Rscript", "/app/start.R"]

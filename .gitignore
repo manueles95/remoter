@@ -1,0 +1,12 @@
+volumes/
+.Rhistory
+.RData
+.Rproj.user
+.Rprofile
+.Renviron
+.env
+.DS_Store
+.vscode
+.vscode/
+.vscode/extensions.json
+.vscode/settings.json

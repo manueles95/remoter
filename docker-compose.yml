@@ -1,0 +1,13 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    environment:
+      - API_KEY=96816435106ae7daec02fa3115aead9a362cf4b002e238a56c68c9b5e6181cd5
+    volumes:
+      - ./volumes:/app/volumes
+    ports:
+      - "8000:8000" 
+    mem_limit: 24g
